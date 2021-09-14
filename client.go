@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"time"
 
@@ -144,7 +143,7 @@ func (c *Client) do(dst interface{}, req *http.Request, expectedStatusCode int) 
 	}
 
 	if dst != nil {
-		dec := json.NewDecoder(io.TeeReader(io.LimitReader(resp.Body, maxReadBytes), os.Stdout))
+		dec := json.NewDecoder(io.LimitReader(resp.Body, maxReadBytes))
 
 		if err := dec.Decode(dst); err != nil {
 			return errors.Wrap(err, "unable to parse JSON response of the remote service")
