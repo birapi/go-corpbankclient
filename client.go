@@ -139,7 +139,11 @@ func (c *Client) do(dst interface{}, req *http.Request, expectedStatusCode int) 
 			return errors.Wrapf(err, "unable to read HTTP response for status code: %s (expected: %d)", resp.Status, expectedStatusCode)
 		}
 
-		return errors.Errorf("remote service returns unexpected response: %s - %s", resp.Status, string(respBody))
+		return errors.Wrapf(wrapErr(&errUnexpectedStatus{
+			StatusCode: resp.StatusCode,
+			RespBody:   respBody,
+		}), "remote service returns unexpected response: %s - %s", resp.Status, string(respBody))
+
 	}
 
 	if dst != nil {

@@ -47,6 +47,7 @@ package main
 import (
 	"context"
 	"log"
+	"errors"
 
 	"github.com/birapi/go-corpbankclient"
 	"github.com/google/uuid"
@@ -76,6 +77,11 @@ func main() {
 	})
 
 	if err != nil {
+		// the error type can be checked as follows
+		if errors.Is(err, corpbankclient.ErrInsufficientBalance) {
+			log.Fatal("insufficient balance")
+		}
+
 		log.Fatal(err)
 	}
 
