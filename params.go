@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type RequestOption interface {
@@ -62,6 +64,18 @@ func WithFilterOutgoingTransactions() RequestOption {
 	return reqOpt(func(req *http.Request) error {
 		q := req.URL.Query()
 		q.Set("direction", "OUTGOING")
+		req.URL.RawQuery = q.Encode()
+		return nil
+	})
+}
+
+// WithFilterAccountIDs filters the list of bank transactions for the given list of account ID.
+func WithFilterAccountIDs(accountID ...uuid.UUID) RequestOption {
+	return reqOpt(func(req *http.Request) error {
+		q := req.URL.Query()
+		for _, aid := range accountID {
+			q.Add("account", aid.String())
+		}
 		req.URL.RawQuery = q.Encode()
 		return nil
 	})
