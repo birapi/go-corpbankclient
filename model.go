@@ -109,6 +109,7 @@ type newAPIKeyResp struct {
 }
 
 type PaymentOrder struct {
+	IdempotencyKey       string
 	SenderIBAN           string
 	RecipientIBAN        string
 	RecipientName        string

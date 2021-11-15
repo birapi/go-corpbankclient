@@ -198,6 +198,10 @@ func (c *Client) MakePayment(ctx context.Context, paymentOrder PaymentOrder) (*P
 
 	req.Header.Set("Content-Type", "application/json")
 
+	if ik := paymentOrder.IdempotencyKey; ik != "" {
+		req.Header.Set("X-Idempotency-Key", ik)
+	}
+
 	paymentResult := &PaymentResult{}
 
 	if err := c.do(paymentResult, req, http.StatusAccepted); err != nil {
