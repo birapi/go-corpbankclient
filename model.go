@@ -77,6 +77,7 @@ type Transaction struct {
 	TransferMethod TrxTransferMethod       `json:"transfer_type"`
 	Sender         *TransactionParticipant `json:"sender"`
 	Recipient      *TransactionParticipant `json:"recipient"`
+	PaymentID      *uuid.UUID              `json:"payment_id"`
 }
 
 type transactionsResp struct {
