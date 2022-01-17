@@ -7,9 +7,11 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type AuthUserStatus string
-type TrxDirection string
-type TrxTransferMethod string
+type (
+	AuthUserStatus    string
+	TrxDirection      string
+	TrxTransferMethod string
+)
 
 const (
 	AuthUserStatusActive       AuthUserStatus = "ACTIVE"
@@ -58,10 +60,10 @@ type TransactionAccount struct {
 }
 
 type TransactionParticipant struct {
-	BankCode        string `json:"bank_code"`
-	IBAN            string `json:"iban"`
-	IdentitiyNumber string `json:"identity_number"`
-	Name            string `json:"name"`
+	BankCode       string `json:"bank_code"`
+	IBAN           string `json:"iban"`
+	IdentityNumber string `json:"identity_number"`
+	Name           string `json:"name"`
 }
 
 type Transaction struct {
