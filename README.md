@@ -194,3 +194,93 @@ func main() {
 	// client.DelAPIKey()
 }
 ```
+
+Example to make payment with a retry mechanism, using idempotency feature:
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"log"
+	"time"
+
+	"github.com/birapi/go-corpbankclient"
+	"github.com/cenkalti/backoff"
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+)
+
+func main() {
+	client, err := corpbankclient.NewClient(corpbankclient.Credentials{
+		APIKeyID:     "<API_KEY_ID>",
+		APIKeySecret: "<API_KEY_SECRET>",
+	}, nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	retry := backoff.NewExponentialBackOff()
+	retry.InitialInterval = 200 * time.Millisecond
+	retry.MaxInterval = 30 * time.Second
+	retry.MaxElapsedTime = 3 * time.Minute
+
+	var paymentResult *corpbankclient.PaymentResult
+
+	// following errors can not be recovered
+	permanentErrors := []error{
+		corpbankclient.ErrInsufficientBalance,
+		corpbankclient.ErrCurrencyMismatch,
+		corpbankclient.ErrIncorrectRecipientData,
+		corpbankclient.ErrInvalidRecipientID,
+		corpbankclient.ErrOutOfEFTHours,
+	}
+
+	idempotencyKey, err := uuid.NewRandom()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = backoff.RetryNotify(
+		func() error {
+			paymentResult, err = client.MakePayment(ctx, corpbankclient.PaymentOrder{
+				SenderIBAN:           "<SENDER_BANK_ACCOUNT_IBAN>",
+				RecipientIBAN:        "<RECIPIENT_BANK_ACCOUNT_IBAN>",
+				RecipientName:        "<RECIPIENT_NAME>",
+				RecipientIdentityNum: "<RECIPIENT_NATIONAL_ID_NUMBER>",
+				TransferAmount:       decimal.NewFromInt(3), // transfer amount
+				RefCode:              uuid.New().String(),   // a unique reference code
+				Description:          "test",                // the description of the bank transfer
+				IdempotencyKey:       idempotencyKey.String(),
+			})
+
+			for _, e := range permanentErrors {
+				if errors.Is(err, e) {
+					return backoff.Permanent(err)
+				}
+			}
+
+			return err
+		},
+
+		backoff.WithContext(retry, ctx),
+
+		func(e error, d time.Duration) {
+			log.Printf("payment error (will retry after %s): %+v", d.String(), err)
+		})
+
+	if err != nil {
+		// the error type can be checked as follows
+		if errors.Is(err, corpbankclient.ErrInsufficientBalance) {
+			log.Fatal("insufficient balance")
+		}
+
+		log.Fatal(err)
+	}
+
+	log.Printf("Payment ID: %s", paymentResult.PaymentID)
+}
+```
